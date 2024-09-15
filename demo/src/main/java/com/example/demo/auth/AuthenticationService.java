@@ -1,6 +1,8 @@
 package com.example.demo.auth;
 
 import com.example.demo.config.JwtService;
+import com.example.demo.exceptions.UserAlreadyExistsException;
+import com.example.demo.exceptions.WrongInputException;
 import com.example.demo.user.Role;
 import com.example.demo.user.User;
 import com.example.demo.user.UserRepository;
@@ -20,14 +22,15 @@ public class AuthenticationService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
-    public AuthenticationResponse register(RegisterRequest request){
-        var user = User.builder()
+    public AuthenticationResponse register(RegisterRequest request) throws UserAlreadyExistsException {
+        var user = User.builder() //var: undefinierter Datentyp. Der Compiler erkennt zur Laufzeit
                 .firstname(request.getFirstname())
                 .lastname(request.getLastname())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.USER)
-                .build();
+                .build();//Builder und build: builder am Anfang, build für den Abschluss, kommt von @Build
+        if(repository.findByEmail(user.getEmail()).isPresent()) throw new UserAlreadyExistsException("Sie haben bereits einen Account.");
         repository.save(user);
         var jwtToken = jwtService.generateToken(user);
         return AuthenticationResponse.builder()
@@ -35,7 +38,7 @@ public class AuthenticationService {
                 .build();
     }
 
-    public AuthenticationResponse authenticate(RegisterRequest request){
+    public AuthenticationResponse authenticate(AuthenticationRequest request){
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
@@ -49,5 +52,14 @@ public class AuthenticationService {
         return AuthenticationResponse.builder()
                 .token(jwtToken)
                 .build();
+    }
+
+    public String deleteByEmail(AuthenticationRequest request) throws WrongInputException {
+        var user = repository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new WrongInputException("Email oder Passwort ist falsch"));
+
+        repository.deleteById(user.getId());
+
+        return "Benutzer erfolgreich gelöscht";
     }
 }

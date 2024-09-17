@@ -2,6 +2,7 @@ package com.example.demo.auth;
 
 import com.example.demo.config.JwtService;
 import com.example.demo.exceptions.UserAlreadyExistsException;
+import com.example.demo.exceptions.UserNotFoundException;
 import com.example.demo.exceptions.WrongInputException;
 import com.example.demo.user.Role;
 import com.example.demo.user.User;
@@ -10,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -54,12 +56,16 @@ public class AuthenticationService {
                 .build();
     }
 
-    public String deleteByEmail(AuthenticationRequest request) throws WrongInputException {
-        var user = repository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new WrongInputException("Email oder Passwort ist falsch"));
+    public void deleteAccountByToken(String token) throws UserNotFoundException {
+        // Extrahiere die E-Mail aus dem JWT-Token
+        String userEmail = jwtService.extractEmail(token);
 
+        // Suche den Benutzer anhand der E-Mail-Adresse
+        var user = repository.findByEmail(userEmail)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        // Lösche den Benutzer anhand der ID
         repository.deleteById(user.getId());
-
-        return "Benutzer erfolgreich gelöscht";
     }
+
 }

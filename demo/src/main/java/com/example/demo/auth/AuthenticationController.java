@@ -1,13 +1,11 @@
 package com.example.demo.auth;
 
 import com.example.demo.exceptions.UserAlreadyExistsException;
+import com.example.demo.exceptions.UserNotFoundException;
 import com.example.demo.exceptions.WrongInputException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -23,12 +21,29 @@ public class AuthenticationController {
     }
 
     @PostMapping("/authenticate")
-    public ResponseEntity<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request){
+    public ResponseEntity<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request) {
         return ResponseEntity.ok(service.authenticate(request));
     }
 
-    @PostMapping("/deleteUser")
-    public ResponseEntity<String> deleteUser(@RequestBody AuthenticationRequest request) throws WrongInputException {
-        return ResponseEntity.ok(service.deleteByEmail(request));
+    @DeleteMapping("/deleteAccount")
+    public ResponseEntity<String> deleteAccount(@RequestHeader("Authorization") String token) throws UserNotFoundException, WrongInputException {
+        // Entferne das "Bearer " Präfix, falls vorhanden
+        String jwt = token.startsWith("Bearer ") ? token.substring(7) : token;
+
+        // Rufe die Service-Methode auf, um den Account zu löschen
+        service.deleteAccountByToken(jwt);
+
+        // Rückgabe der Erfolgsnachricht
+        return ResponseEntity.ok("Account deleted successfully");
     }
+
+
+
+    /*
+    @PostMapping("/refreshToken")
+    public ResponseEntity<AuthenticationResponse> refreshToken(@RequestBody RefreshTokenRequest request) {
+        //todo
+    }
+
+     */
 }

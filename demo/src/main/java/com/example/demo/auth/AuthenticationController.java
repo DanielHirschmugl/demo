@@ -38,7 +38,6 @@ public class AuthenticationController {
     }
 
 
-
     /*
     @PostMapping("/refreshToken")
     public ResponseEntity<AuthenticationResponse> refreshToken(@RequestBody RefreshTokenRequest request) {
